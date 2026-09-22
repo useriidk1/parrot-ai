@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARROT-AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div class="title-row">
+                <h1>PARROT-AI</h1>
+                <span class="subtitle">"A+W. Forever."</span>
+            </div>
+            <div class="visitor-line">
+                You are visitor <span id="visitor-num">#--</span> -
+                <span id="global-ragequits-inline">0</span> people have already ragequit
+            </div>
+        </header>
+
+        <main id="chat">
+            <div class="msg bot">
+                <span class="who">BOT</span>
+                <span class="text">A+W. Type something.</span>
+            </div>
+        </main>
+
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="type here..." />
+            <button type="submit">Send</button>
+        </form>
+
+        <footer>
+            <span id="session-stats">turns: 0 - spam: 0 - answers: 0</span>
+            <button id="brain-btn" type="button">brain</button>
+            <button id="stats-btn" type="button">stats</button>
+        </footer>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="modal-close" class="close">x</button>
+            <pre id="modal-body"></pre>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

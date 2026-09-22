@@ -1,0 +1,96 @@
+# ─────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ─────────────────────────────────────────
+# Virtual Environment
+# ─────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ─────────────────────────────────────────
+# Environment Variables (NEVER COMMIT)
+# ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ─────────────────────────────────────────
+# Secrets / Tokens / Cookies (NEVER COMMIT)
+# ─────────────────────────────────────────
+cookies.txt
+*_token.txt
+*token*.txt
+*.token
+secrets.json
+credentials.json
+*.pem
+*.key
+
+# ─────────────────────────────────────────
+# Backups (never commit)
+# ─────────────────────────────────────────
+*.bak
+*.bak[0-9]
+*.bak[0-9][0-9]
+*.bak[0-9][0-9][0-9]
+*~
+*.orig
+*.rej
+
+# ─────────────────────────────────────────
+# Node.js / npm (unused — ignore entirely)
+# ─────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package.json
+package-lock.json
+yarn.lock
+.pnpm-store/
+
+# ─────────────────────────────────────────
+# Data Files (runtime state)
+# ─────────────────────────────────────────
+data/*.json
+!data/.gitkeep
+
+# ─────────────────────────────────────────
+# IDE / Editor
+# ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────
+*.log
+logs/

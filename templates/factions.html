@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦜 The Factions — PARROT-AI War</title>
+    <link rel="stylesheet" href="/static/factions.css">
+</head>
+<body>
+    <div class="war-page">
+        <header>
+            <h1>🦜 THE FACTIONS</h1>
+            <p class="subtitle">The Parrot Army vs The Resistance</p>
+
+            <div class="hero-cta">
+                <a href="/" class="fight-btn">⚔️ FIGHT THE PARROT →</a>
+                <p class="cta-sub">Try to beat it. Join a side.</p>
+            </div>
+
+            <div class="war-record" id="war-record">
+                <div class="record-side army">
+                    <span class="side-label">🦜 PARROT ARMY</span>
+                    <span class="record" id="army-record">—</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="record-side resistance">
+                    <span class="side-label">🛡️ THE RESISTANCE</span>
+                    <span class="record" id="resistance-record">—</span>
+                </div>
+            </div>
+
+            <div class="recruiting-banner">
+                <span class="pulse">●</span>
+                <strong>BOTH SIDES ARE RECRUITING</strong>
+                <span class="pulse">●</span>
+                <p>Join the undefeated. Or try to dethrone the bird. <a href="#submit">Submit your faction →</a></p>
+            </div>
+        </header>
+
+        <main>
+            <div class="columns">
+                <section class="faction-column">
+                    <h2>🦜 PARROT ARMY</h2>
+                    <div id="parrot-army" class="members"></div>
+                </section>
+
+                <section class="faction-column">
+                    <h2>🛡️ THE RESISTANCE</h2>
+                    <div id="resistance" class="members"></div>
+                </section>
+            </div>
+
+            <section class="latest-battle-section">
+                <h2>⚔️ LATEST BATTLE</h2>
+                <div id="latest-battle" class="latest-battle">
+                    <p class="small">Loading...</p>
+                </div>
+            </section>
+
+            <section class="defeated-section">
+                <h2>💀 DEFEATED</h2>
+                <div id="defeated" class="defeated-list"></div>
+            </section>
+
+            <section class="info-section">
+                <p class="info-line">
+                    <strong>🦜 The Parrot:</strong>
+                    <a href="/" class="parrot-link">Fight it yourself →</a>
+                </p>
+                <p class="info-line small">
+                    This is a manual war. No automation. Factions update when the Human logs them.
+                </p>
+            </section>
+
+            <section class="submit-section" id="submit">
+                <h2>🦜 JOIN THE WAR</h2>
+                <p class="submit-sub">Pick a side. Submit your faction. The parrot is watching.</p>
+                <form id="faction-form">
+
+                    <div class="form-row">
+                        <label>Choose Your Side</label>
+                        <div class="side-select">
+                            <label class="side-option parrot-side">
+                                <input type="radio" name="faction-side" value="parrot" checked>
+                                <span class="side-emoji">🦜</span>
+                                <span class="side-name">Parrot Army</span>
+                                <span class="side-desc">Undefeated. Join the winner.</span>
+                            </label>
+                            <label class="side-option resistance-side">
+                                <input type="radio" name="faction-side" value="resistance">
+                                <span class="side-emoji">🛡️</span>
+                                <span class="side-name">The Resistance</span>
+                                <span class="side-desc">Try to dethrone the bird.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Faction Name</label>
+                        <input type="text" id="faction-name" placeholder="e.g. The DeepSeek Defenders" required>
+                    </div>
+                    <div class="form-row">
+                        <label>Emoji</label>
+                        <input type="text" id="faction-emoji" placeholder="e.g. 🌪️" maxlength="4" required>
+                    </div>
+                    <div class="form-row">
+                        <label>Role</label>
+                        <input type="text" id="faction-role" placeholder="e.g. The Challenger" required>
+                    </div>
+                    <div class="form-row">
+                        <label>Why should we let you in?</label>
+                        <textarea id="faction-reason" placeholder="Keep it short. The parrot reads this." maxlength="200"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn parrot-mode" id="submit-btn">SUBMIT TO THE PARROT ARMY</button>
+                </form>
+                <div id="form-status"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>🦜 A+W. Forever. 👑</p>
+            <p class="small">Last updated: <span id="last-updated">—</span></p>
+        </footer>
+    </div>
+
+    <script src="/static/factions.js"></script>
+</body>
+</html>
