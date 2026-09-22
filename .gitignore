@@ -1,6 +1,4 @@
-# ─────────────────────────────────────────
 # Python
-# ─────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,26 +13,20 @@ dist/
 .coverage
 htmlcov/
 
-# ─────────────────────────────────────────
 # Virtual Environment
-# ─────────────────────────────────────────
 .venv/
 venv/
 env/
 ENV/
 .python-version
 
-# ─────────────────────────────────────────
 # Environment Variables (NEVER COMMIT)
-# ─────────────────────────────────────────
 .env
 .env.local
 .env.*.local
 *.env
 
-# ─────────────────────────────────────────
 # Secrets / Tokens / Cookies (NEVER COMMIT)
-# ─────────────────────────────────────────
 cookies.txt
 *_token.txt
 *token*.txt
@@ -44,20 +36,23 @@ credentials.json
 *.pem
 *.key
 
-# ─────────────────────────────────────────
-# Backups (never commit)
-# ─────────────────────────────────────────
+# Backups & Copies
+*.before-*
 *.bak
 *.bak[0-9]
 *.bak[0-9][0-9]
 *.bak[0-9][0-9][0-9]
-*~
+*.before-*
+*.before_*
+*.old
 *.orig
 *.rej
+*~
+*copy*
+*Copy*
+*COPY*
 
-# ─────────────────────────────────────────
-# Node.js / npm (unused — ignore entirely)
-# ─────────────────────────────────────────
+# Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -67,30 +62,21 @@ package-lock.json
 yarn.lock
 .pnpm-store/
 
-# ─────────────────────────────────────────
 # Data Files (runtime state)
-# ─────────────────────────────────────────
 data/*.json
 !data/.gitkeep
 
-# ─────────────────────────────────────────
 # IDE / Editor
-# ─────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# ─────────────────────────────────────────
 # OS
-# ─────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ─────────────────────────────────────────
 # Logs
-# ─────────────────────────────────────────
 *.log
 logs/
