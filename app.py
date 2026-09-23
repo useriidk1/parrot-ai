@@ -12,6 +12,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import requests
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, session
 
 from parrot_ai.brain import ParrotBrain
@@ -33,9 +35,70 @@ from parrot_ai.briefs import BriefsStore
 from parrot_ai.factions import FactionTracker
 
 
+# ── LOAD ENV (must happen BEFORE reading os.getenv) ─────────────
+load_dotenv()
+
+
+# ── FLASK APP ───────────────────────────────────────────────────
 app = Flask(__name__)
 app.secret_key = os.getenv("PARROT_SECRET_KEY", "dev-secret-change-me")
 
+
+# ── SUPABASE CONFIG ─────────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+print(f"[BOOT] SUPABASE_URL={SUPABASE_URL!r}")
+print(f"[BOOT] SUPABASE_KEY length={len(SUPABASE_KEY)}")
+
+
+def supabase_insert_submission(payload: dict) -> bool:
+    """Insert one submission row into Supabase. Returns True on success."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("[SUPA] insert skipped — missing env")
+        return False
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/submissions",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            json=payload,
+            timeout=8,
+        )
+        print(f"[SUPA] insert status={r.status_code} body={r.text[:200]}")
+        return r.status_code in (200, 201, 204)
+    except requests.RequestException as e:
+        print(f"[SUPA] insert exception: {e}")
+        return False
+
+
+def supabase_fetch_submissions() -> list:
+    """Fetch all submissions from Supabase. Returns [] on error."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("[SUPA] fetch skipped — missing env")
+        return []
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/submissions?select=*&order=submitted_at.desc",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=8,
+        )
+        print(f"[SUPA] fetch status={r.status_code} body={r.text[:200]}")
+        if r.status_code == 200:
+            return r.json()
+    except requests.RequestException as e:
+        print(f"[SUPA] fetch exception: {e}")
+    return []
+
+
+# ── GLOBAL STATE ────────────────────────────────────────────────
 STATS = GlobalStatsTracker()
 SESSIONS: dict[str, "ParrotSession"] = {}
 BRIEFS = BriefsStore()
@@ -44,6 +107,7 @@ FACTIONS = FactionTracker()
 SUBMISSIONS_FILE = Path("data/submissions.json")
 
 
+# ── BEHAVIOR PRIORITY ───────────────────────────────────────────
 PRIORITY_TIERS = [
     ["brief_match", "deepseek_defense", "rival_ai", "dev", "threat",
      "meta", "late_night", "identity_attack", "meta_roast"],
@@ -78,6 +142,7 @@ def eligible_arms(flags: Flags, human_mode: bool = False) -> list[str]:
     return cats
 
 
+# ── RAGEQUIT ────────────────────────────────────────────────────
 RAGEQUIT_PHRASES = {
     "im done", "i'm done", "done",
     "quit", "i quit", "im quitting", "i'm quitting",
@@ -101,6 +166,7 @@ RAGEQUIT_MESSAGES = [
 ]
 
 
+# ── SESSION ─────────────────────────────────────────────────────
 class ParrotSession:
     def __init__(self) -> None:
         self.detector = BehaviorDetector()
@@ -224,6 +290,7 @@ def get_session() -> ParrotSession:
     return SESSIONS[sid]
 
 
+# ── ROUTES: PAGES ───────────────────────────────────────────────
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -234,6 +301,7 @@ def factions_page():
     return render_template("factions.html")
 
 
+# ── ROUTES: CHAT ────────────────────────────────────────────────
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True) or {}
@@ -346,6 +414,7 @@ def chat():
     return jsonify({"reply": reply, "ragequit": False, "arm": arm, "image_url": gif_url, "stats": bot.snapshot(), "global": STATS.stats.to_dict()})
 
 
+# ── ROUTES: DATA ────────────────────────────────────────────────
 @app.route("/api/stats")
 def stats_route():
     return jsonify({"global": STATS.stats.to_dict(), "session": get_session().snapshot()})
@@ -366,9 +435,10 @@ def factions_route():
     return jsonify(FACTIONS.data)
 
 
+# ── ROUTES: SUBMISSIONS ─────────────────────────────────────────
 @app.route("/api/submit_faction", methods=["POST"])
 def submit_faction():
-    """Accept faction submissions. Stored for review, not auto-added."""
+    """Accept faction submissions. Stores to Supabase (falls back to JSON)."""
     data = request.get_json(silent=True) or {}
     side = (data.get("side") or "resistance").strip().lower()
     name = (data.get("name") or "").strip()
@@ -382,33 +452,50 @@ def submit_faction():
     if not name or not emoji or not role:
         return jsonify({"error": "missing fields"}), 400
 
-    submissions = []
-    if SUBMISSIONS_FILE.exists():
-        try:
-            with SUBMISSIONS_FILE.open(encoding="utf-8") as f:
-                submissions = json.load(f)
-        except (OSError, json.JSONDecodeError):
-            submissions = []
-
-    submissions.append({
+    payload = {
         "side": side,
         "name": name,
         "emoji": emoji,
         "role": role,
         "reason": reason,
-        "submitted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+    supabase_ok = supabase_insert_submission(payload)
+
+    if not supabase_ok:
+        submissions = []
+        if SUBMISSIONS_FILE.exists():
+            try:
+                with SUBMISSIONS_FILE.open(encoding="utf-8") as f:
+                    submissions = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                submissions = []
+        submissions.append({
+            **payload,
+            "submitted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        })
+        try:
+            SUBMISSIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with SUBMISSIONS_FILE.open("w", encoding="utf-8") as f:
+                json.dump(submissions, f, indent=2)
+        except OSError:
+            pass
+
+    return jsonify({
+        "status": "ok",
+        "message": f"{emoji} {name} submitted to {side}.",
+        "stored": "supabase" if supabase_ok else "file",
     })
 
-    try:
-        SUBMISSIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with SUBMISSIONS_FILE.open("w", encoding="utf-8") as f:
-            json.dump(submissions, f, indent=2)
-    except OSError:
-        pass
 
-    return jsonify({"status": "ok", "message": f"{emoji} {name} submitted to {side}."})
+@app.route("/api/submissions", methods=["GET"])
+def list_submissions():
+    """List all submissions from Supabase."""
+    rows = supabase_fetch_submissions()
+    return jsonify({"count": len(rows), "submissions": rows})
 
 
+# ── ROUTES: EXIT ────────────────────────────────────────────────
 @app.route("/api/exit", methods=["POST"])
 def exit_route():
     bot = get_session()
@@ -420,6 +507,7 @@ def exit_route():
     return jsonify({"ok": True})
 
 
+# ── ENTRY ───────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("🦜 PARROT-AI v1.0 — http://127.0.0.1:5001")
     app.run(host="127.0.0.1", port=5001, debug=False)
