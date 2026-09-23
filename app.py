@@ -50,8 +50,8 @@ app.secret_key = os.getenv("PARROT_SECRET_KEY", "dev-secret-change-me")
 
 
 # ── SUPABASE CONFIG ─────────────────────────────────────────────
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
 
 print(f"[BOOT] SUPABASE_URL={SUPABASE_URL!r}")
 print(f"[BOOT] SUPABASE_KEY length={len(SUPABASE_KEY)}")

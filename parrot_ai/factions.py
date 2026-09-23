@@ -18,8 +18,8 @@ import requests
 
 DEFAULT_FACTIONS_FILE = Path("data/factions.json")
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
 
 
 EMPTY_STATE = {
