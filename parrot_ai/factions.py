@@ -1,51 +1,131 @@
 """
-PARROT-AI factions — manual tracking.
+PARROT-AI factions — Supabase-backed faction tracker.
 
-Loads faction rosters and war record from data/factions.json.
-No automation. Just display and lookup.
+Reads/writes the whole faction state (roster + defeated + war record)
+from Supabase `factions_state` table (single row, id=1).
+
+Falls back to data/factions.json when Supabase env vars are missing,
+so local dev without a network still works.
 """
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+
+import requests
 
 
 DEFAULT_FACTIONS_FILE = Path("data/factions.json")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+
+EMPTY_STATE = {
+    "parrot_army": {"name": "Parrot Army", "members": []},
+    "resistance": {"name": "The Resistance", "members": []},
+    "defeated": [],
+    "war_record": {},
+}
+
+
+def _supabase_headers(extra: dict | None = None) -> dict:
+    h = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+    if extra:
+        h.update(extra)
+    return h
+
+
+def _supabase_load() -> dict | None:
+    """Load factions state from Supabase. Returns None on error."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/factions_state?id=eq.1&select=data",
+            headers=_supabase_headers(),
+            timeout=8,
+        )
+        if r.status_code == 200:
+            rows = r.json()
+            if rows:
+                data = rows[0].get("data")
+                if isinstance(data, dict):
+                    return data
+            return None
+        print(f"[FACTIONS] supabase load status={r.status_code} body={r.text[:200]}")
+    except requests.RequestException as e:
+        print(f"[FACTIONS] supabase load exception: {e}")
+    return None
+
+
+def _supabase_save(state: dict) -> bool:
+    """Save factions state to Supabase. Returns True on success."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False
+    try:
+        # Upsert: PATCH if exists, POST if not. Use Prefer: resolution=merge-duplicates
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/factions_state",
+            headers=_supabase_headers({
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+            }),
+            json={"id": 1, "data": state},
+            timeout=8,
+        )
+        ok = r.status_code in (200, 201, 204)
+        print(f"[FACTIONS] supabase save status={r.status_code} ok={ok}")
+        return ok
+    except requests.RequestException as e:
+        print(f"[FACTIONS] supabase save exception: {e}")
+        return False
 
 
 class FactionTracker:
     def __init__(self, factions_file: Path | None = None) -> None:
         self.factions_file = Path(factions_file or DEFAULT_FACTIONS_FILE)
         self.data: dict = {}
-        self.load()
+
+        # Try Supabase first
+        supa = _supabase_load()
+        if supa is not None:
+            self.data = supa
+            print("[FACTIONS] loaded from Supabase")
+            # Mirror to local file so local dev stays consistent
+            self._save_local()
+        else:
+            self.load()
+            print("[FACTIONS] loaded from JSON file")
 
     def load(self) -> None:
         if not self.factions_file.exists():
-            self.data = {
-                "parrot_army": {"members": []},
-                "resistance": {"members": []},
-                "defeated": [],
-                "war_record": {},
-            }
+            self.data = dict(EMPTY_STATE)
             return
         try:
             with self.factions_file.open(encoding="utf-8") as f:
                 self.data = json.load(f)
         except (OSError, json.JSONDecodeError):
-            self.data = {
-                "parrot_army": {"members": []},
-                "resistance": {"members": []},
-                "defeated": [],
-                "war_record": {},
-            }
+            self.data = dict(EMPTY_STATE)
 
-    def save(self) -> None:
+    def _save_local(self) -> None:
         try:
             self.factions_file.parent.mkdir(parents=True, exist_ok=True)
             with self.factions_file.open("w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=2)
-        except OSError:
-            pass
+                json.dump(self.data, f, indent=2, ensure_ascii=False)
+        except OSError as e:
+            print(f"[FACTIONS] local save exception: {e}")
+
+    def save(self) -> None:
+        # Save to Supabase first, then local mirror
+        supa_ok = _supabase_save(self.data)
+        self._save_local()
+        if not supa_ok:
+            print("[FACTIONS] supabase save failed — local only")
 
     def format_roster(self) -> str:
         lines = []
