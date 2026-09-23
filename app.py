@@ -14,6 +14,15 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+
+
+# ── LOAD ENV FIRST ──────────────────────────────────────────────
+# Must run BEFORE importing parrot_ai modules, because some of them
+# (e.g. parrot_ai.factions) read os.getenv() at import time.
+load_dotenv()
+
+
+# ── NOW import everything that needs env vars ───────────────────
 from flask import Flask, jsonify, render_template, request, session
 
 from parrot_ai.brain import ParrotBrain
@@ -33,10 +42,6 @@ from parrot_ai.assistant import AssistantClient
 from parrot_ai.reflection import build_reflection
 from parrot_ai.briefs import BriefsStore
 from parrot_ai.factions import FactionTracker
-
-
-# ── LOAD ENV (must happen BEFORE reading os.getenv) ─────────────
-load_dotenv()
 
 
 # ── FLASK APP ───────────────────────────────────────────────────
